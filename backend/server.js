@@ -13,11 +13,12 @@ const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173", // El puerto de tu frontend (Vite)
+        origin: "*", // El puerto de tu frontend (Vite)
         methods: ["GET", "POST", "PUT", "DELETE"]
     }
 });
 
+app.use(cors({ origin: "*" }));
 app.use(cors());
 app.use(express.json());
 
