@@ -25,7 +25,12 @@ function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch(API_URL);
+      // Añadida cabecera para esquivar advertencia de Ngrok en GET
+      const res = await fetch(API_URL, {
+        headers: { 
+          'ngrok-skip-browser-warning': 'true' 
+        }
+      });
       const data = await res.json();
       
       // SOLO actualizamos si es un array. Si es un error del servidor, lo ignoramos.
@@ -45,7 +50,10 @@ function App() {
     try {
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true' // Añadida cabecera en POST
+        },
         body: JSON.stringify({ title: newTask })
       });
       setNewTask(''); // Solo limpiamos el input, la lista se actualiza sola por Sockets
@@ -58,7 +66,10 @@ function App() {
     try {
       await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true' // Añadida cabecera en PUT
+        },
         body: JSON.stringify({ is_completed: !currentStatus })
       });
     } catch (error) {
@@ -68,13 +79,18 @@ function App() {
 
   const deleteTask = async (id) => {
     try {
-      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/${id}`, { 
+        method: 'DELETE',
+        headers: { 
+          'ngrok-skip-browser-warning': 'true' // Añadida cabecera en DELETE
+        }
+      });
     } catch (error) {
       console.error("Error borrando tarea:", error);
     }
   };
 
- return (
+  return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">
       {/* Contenedor: estrecho en móvil, ancho en TV */}
       <div className="max-w-md mx-auto md:max-w-5xl bg-white p-6 md:p-10 rounded-2xl shadow-xl">
@@ -129,6 +145,7 @@ function App() {
         )}
       </div>
     </div>
-  )};
+  );
+}
 
 export default App;
