@@ -8,8 +8,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root_password_segura
       MYSQL_DATABASE: smart_family_db
+      TZ: Europe/Madrid
       MYSQL_USER: admin_family
       MYSQL_PASSWORD: user_password_segura
+      
     ports:
       - "3306:3306"
     volumes:

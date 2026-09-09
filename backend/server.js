@@ -194,3 +194,78 @@ app.delete('/api/tasks/:id', async (req, res) => {
 server.listen(PORT, () => {
     console.log(`🚀 Servidor y WebSockets corriendo en puerto ${PORT}`);
 });
+
+/**
+ * @swagger
+ * /api/dog-logs:
+ *   get:
+ *     summary: Obtiene el registro de eventos del perrete
+ *     responses:
+ *       200:
+ *         description: Array de eventos ordenado de más reciente a más antiguo
+ */
+/**
+ * Obtiene el historial de eventos del perrete (comidas, paseos, medicación).
+ * @async
+ * @function getDogLogs
+ */
+app.get('/api/dog-logs', async (req, res) => {
+  try {
+    // Ordenamos por fecha descendente para ver lo último primero. Limitamos a 20 para no saturar la vista móvil.
+    const [rows] = await db.query('SELECT * FROM dog_logs ORDER BY created_at DESC LIMIT 20');
+    res.json(rows);
+  } catch (error) {
+    console.error("Error cargando eventos del perrete:", error);
+    res.status(500).json({ error: 'Error cargando eventos' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/dog-logs:
+ *   post:
+ *     summary: Registra un nuevo evento para el perrete
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               event_type:
+ *                 type: string
+ *                 enum: [comida, paseo, medicacion]
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Evento registrado y notificado
+ */
+/**
+ * Inserta un nuevo registro del perro y emite 'dog_updated' a todos los clientes.
+ * @async
+ * @function createDogLog
+ */
+app.post('/api/dog-logs', async (req, res) => {
+  const { event_type, notes } = req.body;
+  
+  if (!['comida', 'paseo', 'medicacion'].includes(event_type)) {
+    return res.status(400).json({ error: 'Tipo de evento inválido' });
+  }
+
+  try {
+    const [result] = await db.query(
+      'INSERT INTO dog_logs (event_type, notes) VALUES (?, ?)',
+      [event_type, notes || null]
+    );
+    
+    // ¡La magia del tiempo real! Avisamos a los demás clientes
+    io.emit('dog_updated');
+    
+    res.status(201).json({ id: result.insertId, event_type, notes });
+  } catch (error) {
+    console.error("Error creando registro del perrete:", error);
+    res.status(500).json({ error: 'Error guardando evento' });
+  }
+});
+
