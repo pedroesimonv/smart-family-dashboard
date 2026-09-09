@@ -269,3 +269,113 @@ app.post('/api/dog-logs', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/shopping:
+ *   get:
+ *     summary: Obtiene la lista de la compra dinámica
+ *     description: Devuelve artículos pendientes y los comprados en las últimas 12h
+ *     responses:
+ *       200:
+ *         description: Array de artículos
+ */
+/**
+ * Obtiene artículos pendientes y comprados recientes.
+ * @async
+ * @function getShoppingList
+ */
+app.get('/api/shopping', async (req, res) => {
+  try {
+    // El reto SQL: Pendientes + Comprados hace menos de 12 horas.
+    // Ordenados para que los pendientes (is_bought = 0) salgan arriba.
+    const query = `
+      SELECT * FROM shopping_list 
+      WHERE is_bought = false 
+         OR (is_bought = true AND updated_at >= NOW() - INTERVAL 12 HOUR)
+      ORDER BY is_bought ASC, created_at DESC
+    `;
+    const [rows] = await db.query(query);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error cargando lista de la compra:", error);
+    res.status(500).json({ error: 'Error cargando lista' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/shopping:
+ *   post:
+ *     summary: Añade un artículo a la lista
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               item_name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Artículo creado
+ */
+/**
+ * Inserta un nuevo artículo y emite 'shopping_updated'.
+ * @async
+ * @function addShoppingItem
+ */
+app.post('/api/shopping', async (req, res) => {
+  const { item_name } = req.body;
+  try {
+    const [result] = await db.query('INSERT INTO shopping_list (item_name) VALUES (?)', [item_name]);
+    io.emit('shopping_updated');
+    res.status(201).json({ id: result.insertId, item_name, is_bought: false });
+  } catch (error) {
+    console.error("Error creando artículo:", error);
+    res.status(500).json({ error: 'Error guardando artículo' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/shopping/{id}:
+ *   put:
+ *     summary: Alterna el estado de comprado (is_bought)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               is_bought:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Estado del artículo actualizado
+ */
+/**
+ * Actualiza el estado is_bought y emite 'shopping_updated'.
+ * @async
+ * @function toggleShoppingItem
+ */
+app.put('/api/shopping/:id', async (req, res) => {
+  const { id } = req.params;
+  const { is_bought } = req.body;
+  try {
+    await db.query('UPDATE shopping_list SET is_bought = ? WHERE id = ?', [is_bought, id]);
+    io.emit('shopping_updated');
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error actualizando artículo:", error);
+    res.status(500).json({ error: 'Error actualizando artículo' });
+  }
+});
+

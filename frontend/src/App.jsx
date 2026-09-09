@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { socket } from './socket'; // Importamos la conexión
 import DogDashboard from './DogDashboard';
+import ShoppingList from './ShoppingList';
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -172,6 +173,7 @@ function App() {
           <p className="text-center text-gray-500 md:text-xl mt-8">El muro está despejado. ¡Buen trabajo!</p>
         )}
         <DogDashboard />
+        <ShoppingList />
       </div>
     </div>
   );
