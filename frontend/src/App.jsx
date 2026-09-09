@@ -23,6 +23,13 @@ function App() {
     };
   }, []);
 
+  /**
+ * Obtiene la lista completa de tareas desde el backend y actualiza el estado.
+ * Implementa programación defensiva para evitar cuelgues si el servidor falla.
+ * @async
+ * @function fetchTasks
+ * @returns {Promise<void>}
+ */
   const fetchTasks = async () => {
     try {
       // Añadida cabecera para esquivar advertencia de Ngrok en GET
@@ -43,7 +50,14 @@ function App() {
       console.error("Error cargando tareas:", error);
     }
   };
-
+/**
+ * Captura el evento del formulario y envía una nueva tarea al servidor.
+ * La interfaz no se actualiza aquí, sino a través del evento de WebSockets.
+ * @async
+ * @function addTask
+ * @param {React.FormEvent} e - El evento de envío del formulario HTML.
+ * @returns {Promise<void>}
+ */
   const addTask = async (e) => {
     e.preventDefault();
     if (!newTask.trim()) return;
@@ -61,7 +75,14 @@ function App() {
       console.error("Error creando tarea:", error);
     }
   };
-
+/**
+ * Cambia el estado de completado de una tarea específica.
+ * @async
+ * @function toggleTask
+ * @param {number} id - El identificador único de la tarea en la base de datos.
+ * @param {boolean} currentStatus - El estado actual de la tarea (true si estaba tachada).
+ * @returns {Promise<void>}
+ */
   const toggleTask = async (id, currentStatus) => {
     try {
       await fetch(`${API_URL}/${id}`, {
@@ -76,7 +97,13 @@ function App() {
       console.error("Error actualizando tarea:", error);
     }
   };
-
+/**
+ * Elimina permanentemente una tarea de la base de datos.
+ * @async
+ * @function deleteTask
+ * @param {number} id - El identificador único de la tarea a eliminar.
+ * @returns {Promise<void>}
+ */
   const deleteTask = async (id) => {
     try {
       await fetch(`${API_URL}/${id}`, { 

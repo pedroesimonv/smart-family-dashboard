@@ -6,6 +6,9 @@ const mysql = require('mysql2/promise');
 const http = require('http');
 const { Server } = require('socket.io');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -32,7 +35,13 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Escuchar conexiones de clientes (Ticket 10)
+/**
+ * Inicializa la escucha de eventos WebSocket para tiempo real.
+ * Cuando un cliente se conecta, queda a la espera. Las rutas HTTP emitirán 
+ * el evento 'tasks_updated' a través de esta instancia para notificar cambios.
+ * @event connection
+ * @param {Socket} socket - Instancia de conexión individual del cliente.
+ */
 io.on('connection', (socket) => {
     console.log(`🔌 Nuevo cliente conectado. ID: ${socket.id}`);
     
@@ -41,7 +50,38 @@ io.on('connection', (socket) => {
     });
 });
 
+// Configuración básica de Swagger
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Smart Family Dashboard API',
+      version: '1.0.0',
+      description: 'API REST para el muro de tareas del hogar',
+    },
+    servers: [
+      {
+        url: `http://localhost:${process.env.PORT || 3000}`
+      },
+    ],
+  },
+  apis: ['./server.js'], // Le decimos que busque la documentación en este mismo archivo
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 // --- ENDPOINTS CRUD (Ticket 12: Emitiendo eventos) ---
+
+/**
+ * @swagger
+ * /api/tasks:
+ *   get:
+ *     summary: Obtiene la lista de todas las tareas
+ *     responses:
+ *       200:
+   *         description: Array de tareas devuelto con éxito
+ */
 
 app.get('/api/tasks', async (req, res) => {
     try {
@@ -52,6 +92,25 @@ app.get('/api/tasks', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/tasks:
+ *   post:
+ *     summary: Crea una nueva tarea
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Comprar pienso para el perrete"
+ *     responses:
+ *       201:
+ *         description: Tarea creada correctamente
+ */
 app.post('/api/tasks', async (req, res) => {
     try {
         const { title } = req.body;
@@ -66,6 +125,30 @@ app.post('/api/tasks', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/tasks/{id}:
+ *   put:
+ *     summary: Cambia el estado de una tarea (completada/pendiente)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               is_completed:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Tarea actualizada
+ */
 app.put('/api/tasks/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -79,7 +162,21 @@ app.put('/api/tasks/:id', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
+/**
+ * @swagger
+ * /api/tasks/{id}:
+ *   delete:
+ *     summary: Elimina una tarea del muro
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Tarea eliminada
+ */
 app.delete('/api/tasks/:id', async (req, res) => {
     try {
         const { id } = req.params;
