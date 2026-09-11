@@ -1,51 +1,37 @@
 # 🏡 Smart Family Dashboard
 
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+[![Versión](https://img.shields.io/badge/version-v1.0.0-blue.svg)]()
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)]()
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)]()
+[![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat&logo=socket.io&logoColor=white)]()
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=flat&logo=tailwind-css&logoColor=white)]()
 
-> Una plataforma centralizada para la gestión familiar en tiempo real. Diseñada con una filosofía de doble uso: pantalla "Always-On" para el hogar (solo lectura/vista rápida) y PWA móvil para la interacción sobre la marcha.
+Una aplicación *full-stack* en tiempo real diseñada para centralizar la gestión logística del hogar. Resuelve el problema de la fragmentación de información familiar mediante un panel pasivo de salón (TV/Tablet) y un centro de mando activo para dispositivos móviles.
 
-## 📖 El Problema y la Solución
-La asincronía de horarios dificulta la gestión de tareas diarias en casa. Las pizarras físicas fallan porque exigen estar frente a ellas. **Smart Family Dashboard** resuelve esto sincronizando las necesidades del hogar en tiempo real mediante WebSockets. Si un usuario añade una tarea desde su móvil, aparece instantáneamente en la pantalla del salón.
+🚀 **[Ver demostración en vivo (Vercel) -> [\smart-family-dashboard\docs\assets\muestraMovilPizarra.gif](https://smart-family-dashboard-five.vercel.app/)]**
 
-## 🚀 Características (Roadmap)
+## 💡 La Prueba del Delito (Real-Time Sync)
+*La vista móvil (izquierda) actualiza instantáneamente el tablero de la TV (derecha) mediante WebSockets, sin recargar la página.*
 
-- [x] **Fase 1 (MVP): Muro de Tareas.** Asignación y gestión de tareas domésticas en tiempo real. *(Desplegado y Validado)*
-- [ ] **Fase 2:** Lista de la Compra Dinámica.
-- [ ] **Fase 3:** Centro de Mando del Perrete (seguimiento de comidas, paseos y veterinario).
-- [ ] **Fase 4:** Calendario Compartido de Pareja.
-- [ ] **Fase 5:** Alertas de Pagos y Finanzas.
+![Demostración en tiempo real](./docs/assets/demo.gif)
 
-## 🏗️ Arquitectura y Decisiones Técnicas
+## 🧠 Arquitectura y Decisiones de Diseño
 
-- **Frontend (PWA):** React.js. Layout adaptativo (Móvil vs Pantalla TV). Desplegado en Vercel.
-- **Backend:** Node.js con Express.
-- **Tiempo Real:** WebSockets (`Socket.io`) para garantizar actualizaciones en milisegundos y evitar cargas asíncronas.
-- **Base de Datos:** MySQL estructurada relacionalmente.
-- **Infraestructura:** Entorno de desarrollo local contenerizado con Docker. Túnel reverso temporal para pruebas en producción.
+* **Diseño Dual por Contexto de Uso:** Renderizado condicional del layout y el sistema de diseño (Light/Dark theme) basado en el viewport. 
+    * **Móvil (Mando a distancia):** Tema claro, listas verticales y botones masivos (Hitboxes amigables).
+    * **Desktop/TV (Tablero de corcho):** Tema oscuro asimétrico (CSS Grid 60/40) para lectura pasiva a distancia sin fatiga visual.
+* **Sincronización Bidireccional:** Implementación de `Socket.io` para reflejar el estado mutado (MySQL) en todos los clientes conectados de manera inmediata.
+* **Componentización Atómica:** UI extraída en componentes agnósticos (`<PostItCard>`, `<ActionBtn>`) inyectados con variables de diseño nativas de Tailwind v4.
 
-## 💡 Lecciones Aprendidas y Troubleshooting
+## 🗺️ Roadmap de Desarrollo
 
-Durante el desarrollo de la Fase 1, se resolvieron los siguientes bloqueos técnicos:
-
-1. **Migración a Tailwind CSS v4:** Se adaptó la arquitectura del proyecto a la nueva versión prescindiendo de las directivas `@tailwind` clásicas, configurando manualmente el empaquetado con `@tailwindcss/postcss` y la sintaxis `@import`.
-2. **Inyección de Variables Vercel:** Resolución de bloqueos de seguridad en el despliegue configurando `VITE_API_URL` como texto plano y depuración de caracteres nulos (`%20`) en las cadenas de conexión.
-3. **Bypass de Pantallas de Intercepción (Ngrok):** Implementación de la cabecera HTTP `ngrok-skip-browser-warning` en las instancias de `axios`/`fetch` y en la configuración de *polling/websockets* de Socket.io para permitir la comunicación fluida del túnel reverso sin bloqueo del navegador.
-4. **PWA y Hashing de Assets:** Blindaje de los iconos del Service Worker alojándolos en el directorio `public/` para evitar la mutación de rutas durante el proceso de *build* de Vite.
-
-## ⚠️ Deuda Técnica Actual
-
-- **Infraestructura de Red:** Migrar el túnel reverso efímero actual (Ngrok) a una red privada virtual de confianza cero (Tailscale) para dotar al servidor local de una IP estática, permanente y de acceso privado restringido a los dispositivos del hogar.
-
-## 🛠️ Instalación y Uso (Entorno de Desarrollo)
-
-### Prerrequisitos
-- [Docker](https://www.docker.com/) y Docker Compose instalados.
-- [Node.js](https://nodejs.org/) (v18 o superior).
-
-### Pasos
-1. Clona el repositorio:
-   ```bash
-   git clone [https://github.com/pedroesimonv/smart-family-dashboard.git](https://github.com/pedroesimonv/smart-family-dashboard.git)
+- [x] **MVP (v1.0.0)**
+  - [x] Sincronización en tiempo real (Backend Node/Express + WebSockets).
+  - [x] Base de datos relacional dockerizada (MySQL).
+  - [x] Centro de Mando del Perrete (Eventos).
+  - [x] Lista de la Compra interactiva.
+  - [x] Muro de Tareas (CRUD completo).
+  - [x] Sistema de diseño dinámico (Móvil vs TV).
+- [ ] **Iteraciones Futuras**
+  - [ ] Sistema de autenticación de usuarios (Roles familiares).
+  - [ ] Soporte completo PWA (Offline-first).

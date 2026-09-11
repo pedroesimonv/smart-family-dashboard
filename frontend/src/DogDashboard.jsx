@@ -21,7 +21,6 @@ export default function DogDashboard() {
   useEffect(() => {
     fetchLogs();
     
-    // Escuchamos el nuevo evento del backend
     socket.on('dog_updated', fetchLogs);
     
     return () => socket.off('dog_updated', fetchLogs);
@@ -37,7 +36,6 @@ export default function DogDashboard() {
         },
         body: JSON.stringify({ event_type: eventType })
       });
-      // No actualizamos estado local, dejamos que el WebSocket haga su magia
     } catch (error) {
       console.error(`Error guardando ${eventType}:`, error);
     }
@@ -54,20 +52,20 @@ export default function DogDashboard() {
         🐾 Centro de Mando
       </h2>
 
-      {/* Botones de acción rápida (UI táctil) */}
+      {/* Botones de acción rápida con el componente modular */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <button 
-          onClick={() => addLog('comida')}
-          className="bg-orange-100 hover:bg-orange-200 text-orange-700 p-4 rounded-xl font-bold text-lg transition-colors shadow-sm flex flex-col items-center gap-2 active:scale-95"
-        >
-          <span className="text-3xl">🥩</span> Ha comido
-        </button>
-        <button 
-          onClick={() => addLog('paseo')}
-          className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-4 rounded-xl font-bold text-lg transition-colors shadow-sm flex flex-col items-center gap-2 active:scale-95"
-        >
-          <span className="text-3xl">🦮</span> Paseo
-        </button>
+        <ActionBtn 
+          label="Ha comido" 
+          variant="secondary" 
+          icon="🍖"
+          onClick={() => addLog('comida')} 
+        />
+        <ActionBtn 
+          label="Paseo" 
+          variant="primary" 
+          icon="🦮"
+          onClick={() => addLog('paseo')} 
+        />
       </div>
 
       {/* Historial cronológico */}
@@ -90,21 +88,6 @@ export default function DogDashboard() {
           )}
         </ul>
       </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mt-6">
-  <ActionBtn 
-    label="Ha comido" 
-    variant="secondary" 
-    icon="🍖"
-    onClick={() => registrarAccion('comida')} 
-  />
-  <ActionBtn 
-    label="Paseo" 
-    variant="primary" 
-    icon="🦮"
-    onClick={() => registrarAccion('paseo')} 
-  />
-</div>
     </div>
   );
 }
