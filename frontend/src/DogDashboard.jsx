@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { socket } from './socket';
+import ActionBtn from './ActionBtn';
 
 export default function DogDashboard() {
   const [logs, setLogs] = useState([]);
@@ -89,6 +90,21 @@ export default function DogDashboard() {
           )}
         </ul>
       </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mt-6">
+  <ActionBtn 
+    label="Ha comido" 
+    variant="secondary" 
+    icon="🍖"
+    onClick={() => registrarAccion('comida')} 
+  />
+  <ActionBtn 
+    label="Paseo" 
+    variant="primary" 
+    icon="🦮"
+    onClick={() => registrarAccion('paseo')} 
+  />
+</div>
     </div>
   );
 }

@@ -1,179 +1,139 @@
 import { useState, useEffect } from 'react';
-import { socket } from './socket'; // Importamos la conexión
+import { socket } from './socket';
 import DogDashboard from './DogDashboard';
 import ShoppingList from './ShoppingList';
+import './index.css';
+import PostItCard from './PostItCard';
 
 function App() {
+  // --- 1. ESTADOS ---
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const API_URL = `${import.meta.env.VITE_API_URL}/api/tasks`;
 
-  // 1. Cargar tareas al iniciar
+  // --- 2. EFECTOS (Ciclo de vida) ---
+  
+  // Vigilante de resolución (Tema dinámico)
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Carga inicial de tareas
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // 2. Escuchar cambios en tiempo real
+  // Escucha de WebSockets
   useEffect(() => {
-    socket.on('tasks_updated', () => {
-      fetchTasks(); // Si alguien cambia algo, recargamos la lista
-    });
-
-    // Limpieza: dejamos de escuchar si el componente se desmonta
-    return () => {
-      socket.off('tasks_updated');
-    };
+    socket.on('tasks_updated', () => fetchTasks());
+    return () => socket.off('tasks_updated');
   }, []);
 
-  /**
- * Obtiene la lista completa de tareas desde el backend y actualiza el estado.
- * Implementa programación defensiva para evitar cuelgues si el servidor falla.
- * @async
- * @function fetchTasks
- * @returns {Promise<void>}
- */
+  // --- 3. FUNCIONES DE LÓGICA ---
+  
   const fetchTasks = async () => {
     try {
-      // Añadida cabecera para esquivar advertencia de Ngrok en GET
-      const res = await fetch(API_URL, {
-        headers: { 
-          'ngrok-skip-browser-warning': 'true' 
-        }
-      });
+      const res = await fetch(API_URL, { headers: { 'ngrok-skip-browser-warning': 'true' } });
       const data = await res.json();
-      
-      // SOLO actualizamos si es un array. Si es un error del servidor, lo ignoramos.
-      if (Array.isArray(data)) {
-        setTasks(data);
-      } else {
-        console.error("El servidor no devolvió una lista válida:", data);
-      }
+      if (Array.isArray(data)) setTasks(data);
     } catch (error) {
       console.error("Error cargando tareas:", error);
     }
   };
-/**
- * Captura el evento del formulario y envía una nueva tarea al servidor.
- * La interfaz no se actualiza aquí, sino a través del evento de WebSockets.
- * @async
- * @function addTask
- * @param {React.FormEvent} e - El evento de envío del formulario HTML.
- * @returns {Promise<void>}
- */
+
   const addTask = async (e) => {
     e.preventDefault();
     if (!newTask.trim()) return;
     try {
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true' // Añadida cabecera en POST
-        },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ title: newTask })
       });
-      setNewTask(''); // Solo limpiamos el input, la lista se actualiza sola por Sockets
+      setNewTask('');
     } catch (error) {
       console.error("Error creando tarea:", error);
     }
   };
-/**
- * Cambia el estado de completado de una tarea específica.
- * @async
- * @function toggleTask
- * @param {number} id - El identificador único de la tarea en la base de datos.
- * @param {boolean} currentStatus - El estado actual de la tarea (true si estaba tachada).
- * @returns {Promise<void>}
- */
+
   const toggleTask = async (id, currentStatus) => {
     try {
       await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true' // Añadida cabecera en PUT
-        },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ is_completed: !currentStatus })
       });
     } catch (error) {
       console.error("Error actualizando tarea:", error);
     }
   };
-/**
- * Elimina permanentemente una tarea de la base de datos.
- * @async
- * @function deleteTask
- * @param {number} id - El identificador único de la tarea a eliminar.
- * @returns {Promise<void>}
- */
+
   const deleteTask = async (id) => {
     try {
       await fetch(`${API_URL}/${id}`, { 
         method: 'DELETE',
-        headers: { 
-          'ngrok-skip-browser-warning': 'true' // Añadida cabecera en DELETE
-        }
+        headers: { 'ngrok-skip-browser-warning': 'true' }
       });
     } catch (error) {
       console.error("Error borrando tarea:", error);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-      {/* Contenedor: estrecho en móvil, ancho en TV */}
-      <div className="max-w-md mx-auto md:max-w-5xl bg-white p-6 md:p-10 rounded-2xl shadow-xl">
-        
-        <h1 className="text-3xl md:text-5xl font-extrabold text-center mb-8 md:mb-12 text-gray-800 tracking-tight">
-          Muro de Tareas
-        </h1>
-        
-        <form onSubmit={addTask} className="flex flex-col md:flex-row gap-3 mb-10">
-          <input
-            type="text"
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            placeholder="Ej. Comprar pienso para el perrete..."
-            className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 md:py-4 md:text-xl focus:outline-none focus:border-blue-500 transition-colors"
-          />
-          <button 
-            type="submit" 
-            className="bg-blue-600 text-white px-6 py-3 md:py-4 rounded-xl md:text-xl font-bold hover:bg-blue-700 transition-colors shadow-md"
-          >
-            Añadir Tarea
-          </button>
-        </form>
+  // --- 4. RENDERIZADO (El return único) ---
+  
+ const themeClass = isMobile 
+    ? 'bg-[var(--color-dashboard-bg)] text-gray-900' 
+    : 'bg-[var(--color-corkboard-bg)] text-[var(--color-corkboard-text)]';
 
-        {/* Lista: Columna única en móvil, 2 columnas en TV */}
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {tasks.map(task => (
-            <li key={task.id} className="flex items-center justify-between bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-center gap-4">
-                <input 
-                  type="checkbox" 
-                  checked={task.is_completed} 
-                  onChange={() => toggleTask(task.id, task.is_completed)}
-                  className="w-6 h-6 md:w-8 md:h-8 cursor-pointer accent-blue-600"
-                />
-                <span className={`md:text-2xl font-medium ${task.is_completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                  {task.title}
-                </span>
-              </div>
-              <button 
-                onClick={() => deleteTask(task.id)}
-                className="text-red-500 hover:text-red-700 font-bold md:text-2xl p-2"
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
+  return (
+    <div className={`min-h-screen w-full transition-colors duration-300 ${themeClass} p-4 md:p-8`}>
+      {/* Contenedor principal: grid asimétrico en pantallas grandes */}
+      <div className="max-w-md mx-auto md:max-w-7xl grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
         
-        {tasks.length === 0 && (
-          <p className="text-center text-gray-500 md:text-xl mt-8">El muro está despejado. ¡Buen trabajo!</p>
-        )}
-        <DogDashboard />
-        <ShoppingList />
+        {/* Columna Izquierda: Muro de Tareas (60% -> col-span-6) */}
+        <section className="md:col-span-6 bg-white/5 p-6 md:p-10 rounded-2xl shadow-xl backdrop-blur-sm border border-white/10">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-center mb-8 md:mb-12 tracking-tight">
+            Muro de Tareas
+          </h1>
+          
+          <form onSubmit={addTask} className="flex flex-col md:flex-row gap-3 mb-10">
+            <input
+              type="text"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              placeholder="Ej. Comprar pienso para el perrete..."
+              className="flex-1 border-2 border-gray-200/20 bg-transparent rounded-xl px-4 py-3 md:py-4 focus:outline-none focus:border-blue-500 transition-colors"
+            />
+            <button type="submit" className="bg-blue-600 text-white px-6 py-3 md:py-4 rounded-xl md:text-xl font-bold hover:bg-blue-700 transition-colors shadow-md">
+              Añadir Tarea
+            </button>
+          </form>
+
+          <ul className="flex flex-col gap-4 mb-8">
+            {tasks.map(task => (
+              <PostItCard 
+                key={task.id} 
+                task={task} 
+                onToggle={toggleTask} 
+                onDelete={deleteTask} 
+              />
+            ))}
+          </ul>
+
+          {tasks.length === 0 && (
+            <p className="text-center opacity-70 md:text-xl mb-8">El muro está despejado. ¡Buen trabajo!</p>
+          )}
+        </section>
+        
+        {/* Columna Derecha: Controles Rápidos (40% -> col-span-4) */}
+        <aside className="md:col-span-4 flex flex-col gap-6 md:gap-8">
+          <DogDashboard />
+          <ShoppingList />
+        </aside>
+
       </div>
     </div>
   );

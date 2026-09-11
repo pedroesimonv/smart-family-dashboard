@@ -4,3 +4,16 @@ body {
   background-color: var(--color-gray-100);
   color: var(--color-gray-900);
 }
+
+:root {
+  /* Tema Claro (Móvil) */
+  --color-dashboard-bg: #F9FAFB;
+  --color-dashboard-card: #FFFFFF;
+  --color-action-emerald: #10B981;
+  --color-action-amber: #F59E0B;
+
+  /* Tema Oscuro (TV / Tablero) */
+  --color-corkboard-bg: #121212;
+  --color-corkboard-note: #1E1E1E;
+  --color-corkboard-text: #E4E4E7;
+}
